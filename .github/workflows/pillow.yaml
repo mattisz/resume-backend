@@ -45,5 +45,5 @@ jobs:
       run: |
         if [ -f "./lambdaLayers/pillowLayer/pillow.zip" ]; then
           aws lambda update-function-configuration --function-name resumeGenerateChallengeLambda \
-          --layers [$LAYER_ARN]
+          --layers [$LAYER_ARN] > /dev/null 2>&1
         fi
