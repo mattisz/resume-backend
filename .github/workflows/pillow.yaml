@@ -1,0 +1,49 @@
+name: Upload Pillow to S3
+
+on:
+  push:
+    paths: 
+     - 'lambdaLayers/pillowLayer/pillow.zip'
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Deploy to S3 Bucket
+      run: |
+        if [ -f "./lambdaLayers/pillowLayer/pillow.zip" ]; then
+          aws s3 cp ./lambdaLayers/pillowLayer/pillow.zip \
+          s3://${{ secrets.S3_BUCKET }}/lambdaLayers/pillowLayer/pillow.zip
+        fi
+
+    - name: Publish Layer
+      run: |
+        if [ -f "./lambdaLayers/pillowLayer/pillow.zip" ]; then
+          layerarn=$( aws lambda publish-layer-version --layer-name pillowPython39 --license-info "HPND" \
+          --content S3Bucket="${{ secrets.S3_BUCKET }}",S3Key="lambdaLayers/pillowLayer/pillow.zip" \
+          --compatible-runtimes python3.9 | jq '.LayerVersionArn' )
+          echo "LAYER_ARN"=$layerarn >> "$GITHUB_ENV"
+        fi
+
+    - name: Attatch Layer
+      run: |
+        if [ -f "./lambdaLayers/pillowLayer/pillow.zip" ]; then
+          aws lambda update-function-configuration --function-name resumeGenerateChallengeLambda \
+          --layers [$LAYER_ARN]
+        fi

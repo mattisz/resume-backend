@@ -1,0 +1,3006 @@
+{
+    "Resources" : {
+        "resumeHostedZoneRoute53" : {
+            "Type" : "AWS::Route53::HostedZone",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "Name" : { "Ref" : "DomainNameParameter" }
+            }
+        },
+        "resumeContactEmailSSMParameter" : {
+            "Type" : "AWS::SSM::Parameter",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "Name" : "resumeContactEmailSSMParameter",
+                "Type" : "String",
+                "Value" : {
+                    "Ref": "resumeContactEmailParameter"
+                }
+            }
+        },
+        "resumeContactPhoneSSMParameter" : {
+            "Type" : "AWS::SSM::Parameter",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "Name" : "resumeContactPhoneSSMParameter",
+                "Type" : "String",
+                "Value" : {
+                    "Ref": "resumeContactPhoneParameter"
+                }
+            }
+        },
+        "resumeAcessContactInfoSSMParameterPolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "ManagedPolicyName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeAcessContactInfoSSMParameterPolicy-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ssm:GetParameter",
+                                "ssm:GetParameters",
+                                "ssm:GetParametersByPath",
+                                "ssm:PutParameter",
+                                "ssm:DeleteParameter",
+                                "ssm:DeleteParameters"
+                            ],
+                            "Resource": [
+                                {
+                                    "Fn::Join": [
+                                        "", [
+                                            "arn:",
+                                            {
+                                                "Ref": "AWS::Partition"
+                                            },
+                                            ":ssm:",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            ":",
+                                            {
+                                                "Ref": "AWS::AccountId"
+                                            },
+                                            ":parameter/",
+                                            {
+                                                "Ref": "resumeContactEmailSSMParameter"
+                                            }
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        "", [
+                                            "arn:",
+                                            {
+                                                "Ref": "AWS::Partition"
+                                            },
+                                            ":ssm:",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            ":",
+                                            {
+                                                "Ref": "AWS::AccountId"
+                                            },
+                                            ":parameter/",
+                                            {
+                                                "Ref": "resumeContactPhoneSSMParameter"
+                                            }
+                                        ]
+                                    ]
+                                }
+                            ] 
+                        }
+                    ]
+                }
+            }
+        },
+        "resumeVisitorCounterDynamoDB" : {
+            "Type" : "AWS::DynamoDB::Table",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "AttributeDefinitions" : [ 
+                    {
+                        "AttributeName" : "IP",
+                        "AttributeType" : "S"   
+                    }
+                ],
+                "BillingMode" : "PAY_PER_REQUEST",
+                "KeySchema" : [
+                    {
+                        "AttributeName" : "IP",
+                        "KeyType" : "HASH"
+                    }
+                ],
+                "TableClass" : "STANDARD",
+                "TableName" : "resumeVisitors"
+            }
+        },
+        "resumeAccessDynamoDBVisitorsTablePolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "ManagedPolicyName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeAccessDynamoDBVisitorsTablePolicy-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "dynamodb:List*",
+                                "dynamodb:DescribeReservedCapacity*",
+                                "dynamodb:DescribeLimits",
+                                "dynamodb:DescribeTimeToLive"
+                            ],
+                            "Resource": "*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "dynamodb:BatchGet*",
+                                "dynamodb:DescribeStream",
+                                "dynamodb:DescribeTable",
+                                "dynamodb:Get*",
+                                "dynamodb:Query",
+                                "dynamodb:Scan",
+                                "dynamodb:BatchWrite*",
+                                "dynamodb:CreateTable",
+                                "dynamodb:Delete*",
+                                "dynamodb:Update*",
+                                "dynamodb:PutItem"
+                            ],
+                            "Resource": {
+                                "Fn::GetAtt": ["resumeVisitorCounterDynamoDB","Arn"]
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "resumeAllowLambdaLogsPolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "ManagedPolicyName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeAllowLambdaLogsPolicy-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "logs:CreateLogGroup",
+                            "Resource": {
+                                "Fn::Join": [
+                                    "", [
+                                        "arn:",
+                                        {
+                                            "Ref": "AWS::Partition"
+                                        },
+                                        ":logs:",
+                                        {
+                                            "Ref": "AWS::Region"
+                                        },
+                                        ":",
+                                        {
+                                            "Ref": "AWS::AccountId"
+                                        },
+                                        ":*"
+                                    ]
+                                ]
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "logs:CreateLogStream",
+                                "logs:PutLogEvents"
+                            ],
+                            "Resource": {
+                                "Fn::Join": [
+                                    "", [
+                                        "arn:",
+                                        {
+                                            "Ref": "AWS::Partition"
+                                        },
+                                        ":logs:",
+                                        {
+                                            "Ref": "AWS::Region"
+                                        },
+                                        ":",
+                                        {
+                                            "Ref": "AWS::AccountId"
+                                        },
+                                        ":log-group:/aws/lambda/*"
+                                    ]
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "resumeVisitorCountLambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeVisitorCountLambdaRole-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "resumeAccessDynamoDBVisitorsTablePolicy"
+                    },
+                    {
+                        "Ref": "resumeAllowLambdaLogsPolicy"
+                    }
+                ]
+            }
+        },
+        "resumeVisitorCountLambda" : {
+            "Type" : "AWS::Lambda::Function",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "Code" : {
+                    "ZipFile" : {
+                        "Fn::Join" : [
+                            "\n", [
+                                "import json",
+                                "import boto3",
+                                "import hashlib",
+                                "import os",
+                                "",
+                                "#visitor counter function to display on website",
+                                "",
+                                "#sets table_name from environment variable",
+                                "table_name = os.environ['tableName']",
+                                "",
+                                "client = boto3.client('dynamodb')",
+                                "",
+                                "def lambda_handler(event, context):",
+                                "    ",
+                                "    #gets user ip from event context",
+                                "    plain_ip = event['requestContext']['http']['sourceIp']",
+                                "    #hashes the ip before storing in DynamoDB table",
+                                "    ip = hashlib.sha256(plain_ip.encode('utf-8')).hexdigest()",
+                                "    ",
+                                "    #gets the user's visitor history based on hashed ip",
+                                "    get_user = client.get_item(",
+                                "        TableName=table_name,",
+                                "        Key={",
+                                "            'IP': {",
+                                "                'S': ip",
+                                "            }",
+                                "        }",
+                                "    )",
+                                "    ",
+                                "    #gets the total number of visitors to the site",
+                                "    get_total = client.get_item(",
+                                "        TableName=table_name,",
+                                "        Key={",
+                                "            'IP': {",
+                                "                'S': 'Total'",
+                                "            }",
+                                "        }",
+                                "    )",
+                                "    ",
+                                "    #tries to get the total number of visitors to the site, if this is the first visitor sets to 0",
+                                "    try:",
+                                "        current_total = int(get_total[\"Item\"][\"numVisits\"][\"N\"])",
+                                "    except KeyError:",
+                                "        current_total = 0",
+                                "        ",
+                                "    #tries to get the number of visits for this ip address, if this is the first visit sets to 1",
+                                "    try:",
+                                "        user_num_visits = int(get_user[\"Item\"][\"numVisits\"][\"N\"]) + 1",
+                                "    except KeyError:",
+                                "        user_num_visits = 1",
+                                "",
+                                "    #updates total visitors  if this IP first visit  ",
+                                "    if user_num_visits == 1:",
+                                "        total_visitors = current_total + 1",
+                                "        update_total = client.put_item(",
+                                "        TableName=table_name,",
+                                "        Item={",
+                                "            'IP': {",
+                                "                'S': 'Total'",
+                                "            },",
+                                "            'numVisits': {",
+                                "                'N': str(total_visitors)",
+                                "            }",
+                                "        }",
+                                "    )",
+                                "    else:",
+                                "        total_visitors = current_total",
+                                "    ",
+                                "    #updates the number of visits for this hashed ip address",
+                                "    update_user = client.put_item(",
+                                "        TableName=table_name,",
+                                "        Item={",
+                                "            'IP': {",
+                                "                'S': ip",
+                                "            },",
+                                "            'numVisits': {",
+                                "                'N': str(user_num_visits)",
+                                "            }",
+                                "        }",
+                                "    )",
+                                "    ",
+                                "    #returns the total visits for this ip and the total number of visitors",
+                                "    response = {",
+                                "        'statusCode': 200,",
+                                "        'headers': {",
+                                "            'Access-Control-Allow-Headers': 'Content-Type',",
+                                "            'Access-Control-Allow-Origin': '*.mattisz.com/*',",
+                                "            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',",
+                                "            'Content-Type': 'application/json'",
+                                "        },",
+                                "        'body': json.dumps({",
+                                "            'user_visits':user_num_visits,",
+                                "            'total_visitors':total_visitors",
+                                "        })",
+                                "    }",
+                                "    ",
+                                "    return response"
+                            ]
+                        ]
+                    }
+                },
+                "FunctionName" : "resumeVisitorCountLambda",
+                "Environment" : {
+                    "Variables" : {
+                        "tableName" : { "Ref": "resumeVisitorCounterDynamoDB" }
+                    }
+                },
+                "Handler" : "index.lambda_handler",
+                "Role" : {
+                    "Fn::GetAtt": ["resumeVisitorCountLambdaRole","Arn"]
+                },
+                "Runtime" : "python3.9"
+              }
+        },
+        "resumeChallengeDynamoDB" : {
+            "Type" : "AWS::DynamoDB::Table",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "AttributeDefinitions" : [ 
+                    {
+                        "AttributeName" : "reqId",
+                        "AttributeType" : "S"   
+                    }
+                ],
+                "BillingMode" : "PAY_PER_REQUEST",
+                "KeySchema" : [
+                    {
+                        "AttributeName" : "reqId",
+                        "KeyType" : "HASH"
+                    }
+                ],
+                "TableClass" : "STANDARD",
+                "TableName" : "resumeChallenge",
+                "TimeToLiveSpecification" : {
+                    "AttributeName" : "expiration",
+                    "Enabled" : true
+                  }
+            }
+        },
+        "resumeAccessDynamoDBChallengeTablePolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "ManagedPolicyName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeAccessDynamoDBChallengeTablePolicy-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "dynamodb:List*",
+                                "dynamodb:DescribeReservedCapacity*",
+                                "dynamodb:DescribeLimits",
+                                "dynamodb:DescribeTimeToLive"
+                            ],
+                            "Resource": "*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "dynamodb:BatchGet*",
+                                "dynamodb:DescribeStream",
+                                "dynamodb:DescribeTable",
+                                "dynamodb:Get*",
+                                "dynamodb:Query",
+                                "dynamodb:Scan",
+                                "dynamodb:BatchWrite*",
+                                "dynamodb:CreateTable",
+                                "dynamodb:Delete*",
+                                "dynamodb:Update*",
+                                "dynamodb:PutItem"
+                            ],
+                            "Resource": {
+                                "Fn::GetAtt": ["resumeChallengeDynamoDB","Arn"]
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "resumeGenerateChallengeLambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeGenerateChallengeLambdaRole-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "resumeAccessDynamoDBChallengeTablePolicy"
+                    },
+                    {
+                        "Ref": "resumeAllowLambdaLogsPolicy"
+                    }
+                ]
+            }
+        },
+        "resumeGenerateChallengeLambda" : {
+            "Type" : "AWS::Lambda::Function",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "Code" : {
+                    "ZipFile" : {
+                        "Fn::Join" : [
+                            "\n", [
+                                "from PIL import Image, ImageDraw, ImageFont",
+                                "from urllib.request import urlopen",
+                                "import time",
+                                "import random",
+                                "import base64",
+                                "from io import BytesIO",
+                                "import json",
+                                "import boto3",
+                                "import os",
+                                "",
+                                "#Creates a challenge to be completed by the user to retreive contact info",
+                                "",
+                                "#sets table_name from environment variable",
+                                "table_name = os.environ['tableName']",
+                                "",
+                                "client = boto3.client('dynamodb')",
+                                "",
+                                "def lambda_handler(event, context):",
+                                "",
+                                "    #Set vars from event context",
+                                "    requestId = event['requestContext']['extendedRequestId']",
+                                "",
+                                "    #randomly choose operator - ivision is hard for some so exclude it",
+                                "    def rand_operator():",
+                                "        operators = [\"x\", \"+\", \"-\"]",
+                                "",
+                                "        return random.choice(operators)",
+                                "",
+                                "    #randomly choose digits - 0 and 1 are too easy",
+                                "    def rand_dig ():",
+                                "        digits = [2, 3, 4, 5, 6, 7, 8, 9]",
+                                "",
+                                "        return random.choice(digits)",
+                                "",
+                                "    #generates a simple math problem",
+                                "    def gen_problem(dig1, dig2, operator):",
+                                "        if operator == \"-\" and dig1 < dig2:",
+                                "            temp = dig1",
+                                "            dig1 = dig2",
+                                "            dig2 = temp",
+                                "            solution = dig1 - dig2",
+                                "        elif operator == \"+\":",
+                                "            solution = dig1 + dig2",
+                                "        elif operator == \"x\":",
+                                "            solution = dig1 * dig2",
+                                "        else:",
+                                "            solution = dig1 - dig2",
+                                "",
+                                "        problem = str(dig1) + operator + str(dig2)",
+                                "",
+                                "        return problem, solution",
+                                "",
+                                "    #creates a problem and solution",
+                                "    problem, solution = gen_problem(rand_dig(), rand_dig(), rand_operator())",
+                                "",
+                                "    #colors by name available for converting problem to image",
+                                "    color_list = [",
+                                "        'aliceblue', 'antiquewhite', 'aqua', 'aquamarine', 'azure', ",
+                                "        'beige', 'bisque', 'black', 'blanchedalmond', 'blue', ",
+                                "        'blueviolet', 'brown', 'burlywood', 'cadetblue', 'chartreuse', ",
+                                "        'chocolate', 'coral', 'cornflowerblue', 'cornsilk', 'crimson', ",
+                                "        'cyan', 'darkblue', 'darkcyan', 'darkgoldenrod', 'darkgray', ",
+                                "        'darkgrey', 'darkgreen', 'darkkhaki', 'darkmagenta', ",
+                                "        'darkolivegreen', 'darkorange', 'darkorchid', 'darkred', ",
+                                "        'darksalmon', 'darkseagreen', 'darkslateblue', 'darkslategray', ",
+                                "        'darkslategrey', 'darkturquoise', 'darkviolet', 'deeppink', ",
+                                "        'deepskyblue', 'dimgray', 'dimgrey', 'dodgerblue', 'firebrick', ",
+                                "        'floralwhite', 'forestgreen', 'fuchsia', 'gainsboro', ",
+                                "        'ghostwhite', 'gold', 'goldenrod', 'gray', 'grey', 'green', ",
+                                "        'greenyellow', 'honeydew', 'hotpink', 'indianred', 'indigo', ",
+                                "        'ivory', 'khaki', 'lavender', 'lavenderblush', 'lawngreen', ",
+                                "        'lemonchiffon', 'lightblue', 'lightcoral', 'lightcyan', ",
+                                "        'lightgoldenrodyellow', 'lightgreen', 'lightgray', 'lightgrey', ",
+                                "        'lightpink', 'lightsalmon', 'lightseagreen', 'lightskyblue', ",
+                                "        'lightslategray', 'lightslategrey', 'lightsteelblue', ",
+                                "        'lightyellow', 'lime', 'limegreen', 'linen', 'magenta', ",
+                                "        'maroon', 'mediumaquamarine', 'mediumblue', 'mediumorchid', ",
+                                "        'mediumpurple', 'mediumseagreen', 'mediumslateblue', ",
+                                "        'mediumspringgreen', 'mediumturquoise', 'mediumvioletred', ",
+                                "        'midnightblue', 'mintcream', 'mistyrose', 'moccasin', ",
+                                "        'navajowhite', 'navy', 'oldlace', 'olive', 'olivedrab', ",
+                                "        'orange', 'orangered', 'orchid', 'palegoldenrod', 'palegreen', ",
+                                "        'paleturquoise', 'palevioletred', 'papayawhip', 'peachpuff', ",
+                                "        'peru', 'pink', 'plum', 'powderblue', 'purple', 'rebeccapurple', ",
+                                "        'red', 'rosybrown', 'royalblue', 'saddlebrown', 'salmon', ",
+                                "        'sandybrown', 'seagreen', 'seashell', 'sienna', 'silver', ",
+                                "        'skyblue', 'slateblue', 'slategray', 'slategrey', 'snow', ",
+                                "        'springgreen', 'steelblue', 'tan', 'teal', 'thistle', 'tomato', ",
+                                "        'turquoise', 'violet', 'wheat', 'white', 'whitesmoke', ",
+                                "        'yellow', 'yellowgreen']",
+                                "",
+                                "    #font url to use for problem",
+                                "    font_url = \"https://github.com/googlefonts/roboto/blob/main/src/hinted/Roboto-Regular.ttf?raw=true\"",
+                                "",
+                                "    #use the font",
+                                "    use_font = ImageFont.truetype(urlopen(font_url), 40)",
+                                "",
+                                "    #size for problem",
+                                "    W, H = (200,100)",
+                                "",
+                                "    #set a background color randomly from color_list",
+                                "    background_color = random.choice(color_list)",
+                                "",
+                                "    #remove background color from list to prevent characters becoming invisible",
+                                "    color_list.remove(background_color)",
+                                "",
+                                "    #create the background image",
+                                "    img = Image.new('RGB', (W,H), color = background_color)",
+                                "        ",
+                                "    #draw tge background image",
+                                "    draw = ImageDraw.Draw(img)",
+                                "",
+                                "    #set the text size",
+                                "    def size(t):",
+                                "        w, h = draw.textsize(t, font=use_font)",
+                                "        return w, h",
+                                "",
+                                "    #initialize width, height, and width_list outside loop",
+                                "    w = 0",
+                                "    h = 0",
+                                "    w_list = []",
+                                "",
+                                "    #loop through problem get w and h of each character - set h to the highest character height",
+                                "    #set w to the sum of all character widths",
+                                "    for n in problem:",
+                                "        wx, hy = size(n)",
+                                "        w += wx",
+                                "        w_list.append(wx)",
+                                "        if hy > h:",
+                                "            h = hy",
+                                "",
+                                "    sum_prev_w = 0",
+                                "",
+                                "    #loop through problem, set a color for each character and draw them",
+                                "    for i, n in enumerate(problem):",
+                                "        n_color = random.choice(color_list)",
+                                "        color_list.remove(n_color)",
+                                "        draw.text(((W-w)/2+sum_prev_w,(H-h)/2), n, font=use_font, fill=n_color)",
+                                "        sum_prev_w += w_list[i]",
+                                "",
+                                "    #convert image to base64 so it can be inserted into frontend",
+                                "    buffered = BytesIO()",
+                                "    img.save(buffered, format=\"PNG\")",
+                                "    img_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')",
+                                "",
+                                "    #5 minute timeout to solve problem",
+                                "    expire_epoch = int(time.time()) + 300",
+                                "",
+                                "    #add problem to DynamoDB table",
+                                "    update_total = client.put_item(",
+                                "        TableName=table_name,",
+                                "        Item={",
+                                "            'reqId': {",
+                                "                'S': str(requestId)",
+                                "            },",
+                                "            'solution': {",
+                                "                'N': str(solution)",
+                                "            },",
+                                "            'expiration': {",
+                                "                'N' : str(expire_epoch)",
+                                "            }",
+                                "        }",
+                                "    )",
+                                "",
+                                "    #return the base64 encoded image string and the requestId",
+                                "    response = {",
+                                "        'statusCode': 200,",
+                                "        'headers': {",
+                                "            'Access-Control-Allow-Headers': 'Content-Type',",
+                                "            'Access-Control-Allow-Origin': '*.mattisz.com/*',",
+                                "            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',",
+                                "            'Content-Type': 'application/json'",
+                                "        },",
+                                "        'body': json.dumps({",
+                                "            'problem' : img_b64,",
+                                "            'reqId' : requestId",
+                                "        })",
+                                "    }",
+                                "        ",
+                                "    return response"
+                            ]
+                        ]
+                    }
+                },
+                "FunctionName" : "resumeGenerateChallengeLambda",
+                "Environment" : {
+                    "Variables" : {
+                        "tableName" : { "Ref": "resumeChallengeDynamoDB" }
+                    }
+                },
+                "Handler" : "index.lambda_handler",
+                "Role" : {
+                    "Fn::GetAtt": ["resumeGenerateChallengeLambdaRole","Arn"]
+                },
+                "Runtime" : "python3.9"
+            }
+        },
+        "resumeEvaluateChallengeLambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeEvaluateChallengeLambdaRole-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "resumeAcessContactInfoSSMParameterPolicy"
+                    },
+                    {
+                        "Ref": "resumeAccessDynamoDBChallengeTablePolicy"
+                    },
+                    {
+                        "Ref": "resumeAllowLambdaLogsPolicy"
+                    }
+                ]
+            }
+        },
+        "resumeEvaluateChallengeLambda" : {
+            "Type" : "AWS::Lambda::Function",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "Code" : {
+                    "ZipFile" : {
+                        "Fn::Join" : [
+                            "\n", [
+                                "import json",
+                                "import boto3",
+                                "import os",
+                                "",
+                                "#Evaluates the challenge generated by resumeGenerateChallengeLambda.py",
+                                "#Displays contact info on successful evaluation",
+                                "",
+                                "#Get environment variables for DynamoDB table and SSM parameters",
+                                "table_name = os.environ['tableName']",
+                                "contact_email_parameter = os.environ['contactEmailParameter']",
+                                "contact_phone_parameter = os.environ['contactPhoneParameter']",
+                                "",
+                                "dyn_db_client = boto3.client('dynamodb')",
+                                "ssm_client = boto3.client('ssm')",
+                                "",
+                                "def lambda_handler(event, context):",
+                                "    #Set vars from event query string",
+                                "    requestId = event['queryStringParameters']['reqId']",
+                                "    userSolution = event['queryStringParameters']['solution']",
+                                "    ",
+                                "    #gets the solution from the requestId",
+                                "    get_solution = dyn_db_client.get_item(",
+                                "        TableName=table_name,",
+                                "        Key={",
+                                "            'reqId': {",
+                                "                'S': str(requestId)",
+                                "            }",
+                                "        }",
+                                "    )",
+                                "    ",
+                                "    #deletes the solution because it was used already",
+                                "    dyn_db_client.delete_item(",
+                                "        TableName=table_name,",
+                                "        Key={",
+                                "            'reqId': {",
+                                "                'S': str(requestId)",
+                                "            }",
+                                "        }",
+                                "    )",
+                                "    ",
+                                "    #parse just the solution",
+                                "    solution = get_solution['Item']['solution']['N']",
+                                "    ",
+                                "    #checks user solution vs correct solution and fetches contact parameters if successful",
+                                "    if int(solution) == int(userSolution):",
+                                "        get_email = ssm_client.get_parameter(",
+                                "            Name=contact_email_parameter",
+                                "        )",
+                                "        ",
+                                "        get_phone = ssm_client.get_parameter(",
+                                "            Name=contact_phone_parameter",
+                                "        )",
+                                "        ",
+                                "        email = get_email['Parameter']['Value']",
+                                "        phone = get_phone['Parameter']['Value']",
+                                "        ",
+                                "    else:",
+                                "        email = \"try\"",
+                                "        phone = \"again\"",
+                                "",
+                                "    #returns contact info or try again",
+                                "    response = {",
+                                "        'statusCode': 200,",
+                                "        'headers': {",
+                                "            'Access-Control-Allow-Headers': 'Content-Type',",
+                                "            'Access-Control-Allow-Origin': '*.mattisz.com/*',",
+                                "            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',",
+                                "            'Content-Type': 'application/json'",
+                                "        },",
+                                "        'body': json.dumps({",
+                                "            'email': email,",
+                                "            'phone': phone",
+                                "        })",
+                                "    }",
+                                "",
+                                "    return response"
+                            ]
+                        ]
+                    }
+                },
+                "FunctionName" : "resumeEvaluateChallengeLambda",
+                "Environment" : {
+                    "Variables" : {
+                        "tableName" : { "Ref": "resumeChallengeDynamoDB" },
+                        "contactEmailParameter" : { "Ref": "resumeContactEmailSSMParameter" },
+                        "contactPhoneParameter" : { "Ref": "resumeContactPhoneSSMParameter" }
+                    }
+                },
+                "Handler" : "index.lambda_handler",
+                "Role" : {
+                    "Fn::GetAtt": ["resumeEvaluateChallengeLambdaRole","Arn"]
+                },
+                "Runtime" : "python3.9"
+            }
+        },
+        "resumeApiGatewayACM" : {
+            "Type" : "AWS::CertificateManager::Certificate",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "DomainName" : {
+                    "Fn::Join": [
+                        "", [
+                            "api.",
+                            {
+                                "Ref": "DomainNameParameter"
+                            }
+                        ]
+                    ]
+                },
+                "DomainValidationOptions" : [
+                    {
+                        "DomainName" : {
+                            "Fn::Join": [
+                                "", [
+                                    "api.",
+                                    {
+                                        "Ref": "DomainNameParameter"
+                                    }
+                                ]
+                            ]
+                        },
+                        "HostedZoneId" : {
+                            "Ref": "resumeHostedZoneRoute53"
+                        }
+                      }
+                ],
+                "ValidationMethod" : "DNS"
+            }
+        },
+        "resumeApiGatewayApi" : {
+            "Type" : "AWS::ApiGatewayV2::Api",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "CorsConfiguration" : {
+                    "AllowCredentials" : false,
+                    "AllowHeaders" : [ "*" ],
+                    "AllowMethods" : [ "*" ],
+                    "AllowOrigins" : [{
+                        "Fn::Join": [
+                            "", [
+                                "https://",
+                                {
+                                    "Ref": "DomainNameParameter"
+                                }
+                            ]
+                        ]
+                    }],
+                    "ExposeHeaders" : [ "*" ],
+                    "MaxAge" : 0
+                },
+                "DisableExecuteApiEndpoint" : true,
+                "Name" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeAPI-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "ProtocolType" : "HTTP"
+            }
+        },
+        "resumeApiGatewayDomain" : {
+            "Type" : "AWS::ApiGatewayV2::DomainName",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "DomainName" : {
+                    "Fn::Join": [
+                        "", [
+                            "api.",
+                            {
+                                "Ref": "DomainNameParameter"
+                            }
+                        ]
+                    ]
+                },
+                "DomainNameConfigurations" : [
+                    {
+                        "EndpointType": "REGIONAL",
+                        "CertificateArn": {
+                            "Ref": "resumeApiGatewayACM"
+                        },
+                        "CertificateName": "resumeAPICert",
+                        "SecurityPolicy": "TLS_1_2"
+                    }
+                ]
+            }
+        },
+        "resumeApiGatewayProdStage" : {
+            "Type" : "AWS::ApiGatewayV2::Stage",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "ApiId" : {
+                    "Ref": "resumeApiGatewayApi"
+                },
+                "AutoDeploy" : true,
+                "DefaultRouteSettings" : {
+                    "ThrottlingBurstLimit" : 50,
+                    "ThrottlingRateLimit" : 250
+                },
+                "StageName" : "prod"
+            }
+        },
+        "resumeApiGatewayProdMapping" : {
+            "Type" : "AWS::ApiGatewayV2::ApiMapping",
+            "DeletionPolicy" : "Delete",
+            "DependsOn" : "resumeApiGatewayDomain",
+            "Properties" : {
+                "ApiId" : {
+                    "Ref": "resumeApiGatewayApi"
+                },
+                "DomainName" : {
+                    "Fn::Join": [
+                        "", [
+                            "api.",
+                            {
+                                "Ref": "DomainNameParameter"
+                            }
+                        ]
+                    ]
+                },
+                "Stage" : {
+                    "Ref": "resumeApiGatewayProdStage"
+                }
+            }
+        },
+        "resumeApiGatewayLambdaInvokePolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "ManagedPolicyName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeApiGatewayLambdaInvokePolicy-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "lambda:InvokeFunction"
+                            ],
+                            "Resource": [
+                                {
+                                    "Fn::GetAtt": ["resumeVisitorCountLambda","Arn"]
+                                },
+                                {
+                                    "Fn::GetAtt": ["resumeGenerateChallengeLambda","Arn"]
+                                },
+                                {
+                                    "Fn::GetAtt": ["resumeEvaluateChallengeLambda","Arn"]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "resumeApiGatewayLambdaInvokeRole": {
+            "Type": "AWS::IAM::Role",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeApiGatewayLambdaInvokeRole-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                              "Service": "apigateway.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "resumeApiGatewayLambdaInvokePolicy"
+                    }
+                ]
+            }
+        },
+        "resumeApiGatewayVisitorCountIntegration" : {
+            "Type" : "AWS::ApiGatewayV2::Integration",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "ApiId" : {
+                    "Ref": "resumeApiGatewayApi"
+                },
+                "CredentialsArn" : {
+                    "Fn::GetAtt" : ["resumeApiGatewayLambdaInvokeRole", "Arn"]
+                },
+                "IntegrationMethod" : "POST",
+                "IntegrationType" : "AWS_PROXY",
+                "IntegrationUri" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:",
+                            {
+                                "Ref": "AWS::Partition"
+                            },
+                            ":apigateway:",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            ":lambda:path/2015-03-31/functions/",
+                            {
+                                "Fn::GetAtt": [
+                                    "resumeVisitorCountLambda",
+                                    "Arn"
+                                ]
+                            },
+                            "/invocations"
+                        ]
+                    ]
+                },
+                "PayloadFormatVersion" : "2.0"
+            }
+        },
+        "resumeApiGatewayVisitorCountGetRoute" : {
+            "Type" : "AWS::ApiGatewayV2::Route",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "ApiId" : {
+                    "Ref": "resumeApiGatewayApi"
+                },
+                "RouteKey" : "GET /getCount",
+                "Target" : {
+                    "Fn::Join": [
+                        "/",
+                        [
+                            "integrations",
+                            {
+                                "Ref": "resumeApiGatewayVisitorCountIntegration"
+                            }
+                        ]
+                    ]
+                }
+            }
+        },
+        "resumeApiGatewayVisitorCountOptionsRoute" : {
+            "Type" : "AWS::ApiGatewayV2::Route",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "ApiId" : {
+                    "Ref": "resumeApiGatewayApi"
+                },
+                "RouteKey" : "OPTIONS /getCount",
+                "Target" : {
+                    "Fn::Join": [
+                        "/",
+                        [
+                            "integrations",
+                            {
+                                "Ref": "resumeApiGatewayVisitorCountIntegration"
+                            }
+                        ]
+                    ]
+                }
+            }
+        },
+        "resumeApiGatewayGenerateChallengeIntegration" : {
+            "Type" : "AWS::ApiGatewayV2::Integration",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "ApiId" : {
+                    "Ref": "resumeApiGatewayApi"
+                },
+                "CredentialsArn" : {
+                    "Fn::GetAtt" : ["resumeApiGatewayLambdaInvokeRole", "Arn"]
+                },
+                "IntegrationMethod" : "POST",
+                "IntegrationType" : "AWS_PROXY",
+                "IntegrationUri" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:",
+                            {
+                                "Ref": "AWS::Partition"
+                            },
+                            ":apigateway:",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            ":lambda:path/2015-03-31/functions/",
+                            {
+                                "Fn::GetAtt": [
+                                    "resumeGenerateChallengeLambda",
+                                    "Arn"
+                                ]
+                            },
+                            "/invocations"
+                        ]
+                    ]
+                },
+                "PayloadFormatVersion" : "1.0"
+            }
+        },
+        "resumeApiGatewayGenerateChallengeGetRoute" : {
+            "Type" : "AWS::ApiGatewayV2::Route",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "ApiId" : {
+                    "Ref": "resumeApiGatewayApi"
+                },
+                "RouteKey" : "GET /genProblem",
+                "Target" : {
+                    "Fn::Join": [
+                        "/",
+                        [
+                            "integrations",
+                            {
+                                "Ref": "resumeApiGatewayGenerateChallengeIntegration"
+                            }
+                        ]
+                    ]
+                }
+            }
+        },
+        "resumeApiGatewayGenerateChallengeOptionsRoute" : {
+            "Type" : "AWS::ApiGatewayV2::Route",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "ApiId" : {
+                    "Ref": "resumeApiGatewayApi"
+                },
+                "RouteKey" : "OPTIONS /genProblem",
+                "Target" : {
+                    "Fn::Join": [
+                        "/",
+                        [
+                            "integrations",
+                            {
+                                "Ref": "resumeApiGatewayGenerateChallengeIntegration"
+                            }
+                        ]
+                    ]
+                }
+            }
+        },
+        "resumeApiGatewayEvaluateChallengeIntegration" : {
+            "Type" : "AWS::ApiGatewayV2::Integration",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "ApiId" : {
+                    "Ref": "resumeApiGatewayApi"
+                },
+                "CredentialsArn" : {
+                    "Fn::GetAtt" : ["resumeApiGatewayLambdaInvokeRole", "Arn"]
+                },
+                "IntegrationMethod" : "POST",
+                "IntegrationType" : "AWS_PROXY",
+                "IntegrationUri" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:",
+                            {
+                                "Ref": "AWS::Partition"
+                            },
+                            ":apigateway:",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            ":lambda:path/2015-03-31/functions/",
+                            {
+                                "Fn::GetAtt": [
+                                    "resumeEvaluateChallengeLambda",
+                                    "Arn"
+                                ]
+                            },
+                            "/invocations"
+                        ]
+                    ]
+                },
+                "PayloadFormatVersion" : "2.0"
+            }
+        },
+        "resumeApiGatewayEvaluateChallengeGetRoute" : {
+            "Type" : "AWS::ApiGatewayV2::Route",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "ApiId" : {
+                    "Ref": "resumeApiGatewayApi"
+                },
+                "RouteKey" : "GET /evalProblem",
+                "Target" : {
+                    "Fn::Join": [
+                        "/",
+                        [
+                            "integrations",
+                            {
+                                "Ref": "resumeApiGatewayEvaluateChallengeIntegration"
+                            }
+                        ]
+                    ]
+                }
+            }
+        },
+        "resumeApiGatewayEvaluateChallengeOptionsRoute" : {
+            "Type" : "AWS::ApiGatewayV2::Route",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "ApiId" : {
+                    "Ref": "resumeApiGatewayApi"
+                },
+                "RouteKey" : "OPTIONS /evalProblem",
+                "Target" : {
+                    "Fn::Join": [
+                        "/",
+                        [
+                            "integrations",
+                            {
+                                "Ref": "resumeApiGatewayEvaluateChallengeIntegration"
+                            }
+                        ]
+                    ]
+                }
+            }
+        },
+        "resumeApiGatewayR53ARecord": {
+            "Type" : "AWS::Route53::RecordSet",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "AliasTarget" : {
+                    "DNSName" : {
+                        "Fn::GetAtt": ["resumeApiGatewayDomain","RegionalDomainName"]
+                    },
+                    "EvaluateTargetHealth" : false,
+                    "HostedZoneId" : { 
+                        "Fn::GetAtt": ["resumeApiGatewayDomain","RegionalHostedZoneId"]
+                    }
+                },
+                "HostedZoneId" : {
+                    "Ref" : "resumeHostedZoneRoute53"
+                },
+                "Name" : {
+                    "Fn::Join": [
+                        "", [
+                            "api.",
+                            {
+                                "Ref": "DomainNameParameter"
+                            }
+                        ]
+                    ]
+                },
+                "Type" : "A"
+            }
+        },
+        "resumeDeleteApiGatewayACMCnameLambdaPolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "ManagedPolicyName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeDeleteApiGatewayACMCnameLambdaPolicy-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "PolicyDocument":{
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "route53:ChangeResourceRecordSets",
+                            "Resource": {
+                                "Fn::Join": [
+                                    "", [
+                                        "arn:",
+                                        {
+                                            "Ref": "AWS::Partition"
+                                        },
+                                        ":route53:::hostedzone/",
+                                        {
+                                            "Ref": "resumeHostedZoneRoute53"
+                                        }
+                                    ]
+                                ]
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "acm:DescribeCertificate"
+                            ],
+                            "Resource": {
+                                "Ref": "resumeApiGatewayACM"
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "resumeDeleteApiGatewayACMCnameLambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeDeleteApiGatewayACMCnameLambdaRole-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "resumeDeleteApiGatewayACMCnameLambdaPolicy"
+                    },
+                    {
+                        "Ref": "resumeAllowLambdaLogsPolicy"
+                    }
+                ]
+            }
+        },
+        "resumeDeleteApiGatewayACMCnameLambda" : {
+            "Type" : "AWS::Lambda::Function",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "Code" : {
+                    "ZipFile" : {
+                        "Fn::Join" : [
+                            "\n", [
+                                "from __future__ import print_function",
+                                "import urllib3",
+                                "import json",
+                                "import boto3",
+                                "",
+                                "#Deletes ApiGateway ACM Cname that was created automatically on stack creation",
+                                "",
+                                "#INPUTS: CertificateArn, R53ZoneId",
+                                "",
+                                "## start cfnresponse module source code ##",
+                                "SUCCESS = \"SUCCESS\"",
+                                "FAILED = \"FAILED\"",
+                                "",
+                                "http = urllib3.PoolManager()",
+                                "",
+                                "",
+                                "def send(event, context, responseStatus, responseData, physicalResourceId=None, noEcho=False, reason=None):",
+                                "    responseUrl = event['ResponseURL']",
+                                "",
+                                "    print(responseUrl)",
+                                "",
+                                "    responseBody = {",
+                                "        'Status' : responseStatus,",
+                                "        'Reason' : reason or \"See the details in CloudWatch Log Stream: {}\".format(context.log_stream_name),",
+                                "        'PhysicalResourceId' : physicalResourceId or context.log_stream_name,",
+                                "        'StackId' : event['StackId'],",
+                                "        'RequestId' : event['RequestId'],",
+                                "        'LogicalResourceId' : event['LogicalResourceId'],",
+                                "        'NoEcho' : noEcho,",
+                                "        'Data' : responseData",
+                                "    }",
+                                "",
+                                "    json_responseBody = json.dumps(responseBody)",
+                                "",
+                                "    print(\"Response body:\")",
+                                "    print(json_responseBody)",
+                                "",
+                                "    headers = {",
+                                "        'content-type' : '',",
+                                "        'content-length' : str(len(json_responseBody))",
+                                "    }",
+                                "",
+                                "    try:",
+                                "        response = http.request('PUT', responseUrl, headers=headers, body=json_responseBody)",
+                                "        print(\"Status code:\", response.status)",
+                                "",
+                                "",
+                                "    except Exception as e:",
+                                "",
+                                "        print(\"send(..) failed executing http.request(..):\", e)",
+                                "## end cfnresponse module souce code ##",
+                                "",
+                                "acm_client = boto3.client('acm')",
+                                "r53_client = boto3.client('route53')",
+                                "",
+                                "def lambda_handler(event, context):",
+                                "",
+                                "    #Set vars from event properties    ",
+                                "    R53ZoneId = event['ResourceProperties']['R53ZoneId']",
+                                "    CertificateArn = event['ResourceProperties']['CertificateArn']",
+                                "",
+                                "    if event['RequestType'] == \"Delete\":",
+                                "        ",
+                                "        #Initialize vars outside try block",
+                                "        CNAME = \"\"",
+                                "        Value = \"\"",
+                                "        ",
+                                "        try:",
+                                "            #describe certificate to extract CNAME info",
+                                "            describe_response = acm_client.describe_certificate(",
+                                "                CertificateArn=CertificateArn",
+                                "            )",
+                                "            ",
+                                "            #exctract CNAME and Value from cert describe",
+                                "            CNAME = describe_response['Certificate']['DomainValidationOptions'][0]['ResourceRecord']['Name']",
+                                "            Value = describe_response['Certificate']['DomainValidationOptions'][0]['ResourceRecord']['Value']",
+                                "            ",
+                                "        ",
+                                "        except Exception as e:",
+                                "            responseData = {",
+                                "                \"FailReason\" : \"Certificate describe failed\"",
+                                "            }",
+                                "            STATUS = \"FAILED\"",
+                                "                        ",
+                                "        try:",
+                                "            #Delete CNAME",
+                                "            r53_response = r53_client.change_resource_record_sets(",
+                                "                HostedZoneId=R53ZoneId,",
+                                "                ChangeBatch= {",
+                                "                    'Changes': [",
+                                "                        {",
+                                "                            'Action': 'DELETE',",
+                                "                            'ResourceRecordSet': ",
+                                "                                {",
+                                "                                    'Name': CNAME,",
+                                "                                    'Type': 'CNAME',",
+                                "                                    'TTL': 300,",
+                                "                                    'ResourceRecords': [{'Value': Value}]",
+                                "                                }",
+                                "                        }",
+                                "                    ]",
+                                "                }",
+                                "            )",
+                                "            ",
+                                "            STATUS = \"SUCCESS\"",
+                                "            ",
+                                "            responseData = {",
+                                "                \"SUCCESS\" : \"Successfully deleted ApiGateway ACM CNAME from R53\"",
+                                "            }",
+                                "                        ",
+                                "        except Exception as e:",
+                                "            responseData = {",
+                                "                \"FailReason\" : \"R53 ACM CNAME delete failed\",",
+                                "                \"cname\" : CNAME,",
+                                "                \"cnameval\" : Value,",
+                                "                \"r53zoneid\" : R53ZoneId",
+                                "            }",
+                                "            STATUS = \"FAILED\"",
+                                "                ",
+                                "        send(event, context, STATUS, responseData)",
+                                "        ",
+                                "    else:",
+                                "        responseData = {",
+                                "                \"SUCCESS\" : \"This was not a delete request no action needed\"",
+                                "            }",
+                                "        send(event, context, SUCCESS, responseData)"
+                            ]
+                        ]
+                    }
+                },
+                "FunctionName" : "resumeDeleteApiGatewayACMCnameLambda",
+                "Handler" : "index.lambda_handler",
+                "Role" : {
+                    "Fn::GetAtt": ["resumeDeleteApiGatewayACMCnameLambdaRole","Arn"]
+                },
+                "Runtime" : "python3.9",
+                "Timeout" : 360
+              }
+        },
+        "resumeDeleteApiGatewayACMCnameLambdaCustomResource" : {
+            "Type" : "AWS::CloudFormation::CustomResource",
+            "Properties" : {
+                "ServiceToken" : {
+                    "Fn::GetAtt": ["resumeDeleteApiGatewayACMCnameLambda","Arn"]
+                },
+                "CertificateArn": {
+                    "Ref": "resumeApiGatewayACM"
+                },
+                "R53ZoneId": {
+                    "Ref": "resumeHostedZoneRoute53"
+                }
+            }
+        },
+        "resumeCloudfrontACMLambdaPolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "ManagedPolicyName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeCloudfrontACMLambdaPolicy-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "PolicyDocument":{
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "route53:ChangeResourceRecordSets",
+                            "Resource": {
+                                "Fn::Join": [
+                                    "", [
+                                        "arn:",
+                                        {
+                                            "Ref": "AWS::Partition"
+                                        },
+                                        ":route53:::hostedzone/",
+                                        {
+                                            "Ref": "resumeHostedZoneRoute53"
+                                        }
+                                    ]
+                                ]
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "acm:DeleteCertificate",
+                                "acm:DescribeCertificate"
+                            ],
+                            "Resource": {
+                                "Fn::Join": [
+                                    "", [
+                                        "arn:",
+                                        {
+                                            "Ref": "AWS::Partition"
+                                        },
+                                        ":acm:us-east-1:",
+                                        {
+                                            "Ref": "AWS::AccountId"
+                                        },
+                                        ":certificate/*"
+                                    ]
+                                ]
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": "acm:RequestCertificate",
+                            "Resource": "*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [ 
+                                "cloudformation:DescribeStacks"
+                            ],
+                            "Resource": {
+                                "Ref": "AWS::StackId"
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "resumeCloudfrontACMLambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeCloudfrontACMLambdaRole-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "resumeCloudfrontACMLambdaPolicy"
+                    },
+                    {
+                        "Ref": "resumeAllowLambdaLogsPolicy"
+                    }
+                ]
+            }
+        },
+        "resumeCloudfrontACMLambda" : {
+            "Type" : "AWS::Lambda::Function",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "Code" : {
+                    "ZipFile" : {
+                        "Fn::Join" : [
+                            "\n", [
+                                "from __future__ import print_function",
+                                "import urllib3",
+                                "import time",
+                                "import json",
+                                "import boto3",
+                                "",
+                                "#creates ACM certificate in us-east-1 for cloudfront regardless of region stack is deployed to",
+                                "",
+                                "#INPUTS: DomainName, R53ZoneId",
+                                "#Outputs: CertificateArn, CNAME, Value",
+                                "",
+                                "## start cfnresponse module source code ##",
+                                "SUCCESS = \"SUCCESS\"",
+                                "FAILED = \"FAILED\"",
+                                "",
+                                "http = urllib3.PoolManager()",
+                                "",
+                                "",
+                                "def send(event, context, responseStatus, responseData, physicalResourceId=None, noEcho=False, reason=None):",
+                                "    responseUrl = event['ResponseURL']",
+                                "",
+                                "    print(responseUrl)",
+                                "",
+                                "    responseBody = {",
+                                "        'Status' : responseStatus,",
+                                "        'Reason' : reason or \"See the details in CloudWatch Log Stream: {}\".format(context.log_stream_name),",
+                                "        'PhysicalResourceId' : physicalResourceId or context.log_stream_name,",
+                                "        'StackId' : event['StackId'],",
+                                "        'RequestId' : event['RequestId'],",
+                                "        'LogicalResourceId' : event['LogicalResourceId'],",
+                                "        'NoEcho' : noEcho,",
+                                "        'Data' : responseData",
+                                "    }",
+                                "",
+                                "    json_responseBody = json.dumps(responseBody)",
+                                "",
+                                "    print(\"Response body:\")",
+                                "    print(json_responseBody)",
+                                "",
+                                "    headers = {",
+                                "        'content-type' : '',",
+                                "        'content-length' : str(len(json_responseBody))",
+                                "    }",
+                                "",
+                                "    try:",
+                                "        response = http.request('PUT', responseUrl, headers=headers, body=json_responseBody)",
+                                "        print(\"Status code:\", response.status)",
+                                "",
+                                "",
+                                "    except Exception as e:",
+                                "",
+                                "        print(\"send(..) failed executing http.request(..):\", e)",
+                                "## end cfnresponse module souce code ##",
+                                "",
+                                "cfn_client = boto3.client('cloudformation')",
+                                "acm_client = boto3.client('acm', region_name='us-east-1')",
+                                "r53_client = boto3.client('route53')",
+                                "",
+                                "def lambda_handler(event, context):",
+                                "    ",
+                                "    #set timeout for while loop",
+                                "    expire_epoch = int(time.time()) + 300",
+                                "    ",
+                                "    #Set vars from event properties",
+                                "    domain = event['ResourceProperties']['DomainName']",
+                                "    R53ZoneId = event['ResourceProperties']['R53ZoneId']",
+                                "    stackId = event['StackId']",
+                                "        ",
+                                "    if event['RequestType'] == \"Create\":",
+                                "    ",
+                                "        try:",
+                                "            #request certificate",
+                                "            req_response = acm_client.request_certificate(",
+                                "                DomainName=domain,",
+                                "                ValidationMethod='DNS',",
+                                "                IdempotencyToken='lambdaACMReq',",
+                                "                Options={",
+                                "                    'CertificateTransparencyLoggingPreference': 'ENABLED'",
+                                "                }",
+                                "            )",
+                                "        except Exception as e:",
+                                "            responseData = {",
+                                "                \"FailReason\" : \"Certificate request failed\"",
+                                "            }",
+                                "            send(event, context, FAILED, responseData)",
+                                "        ",
+                                "        while int(time.time()) < expire_epoch:",
+                                "            ",
+                                "            #intialize vars outside try block",
+                                "            CNAME = \"\"",
+                                "            Value = \"\"",
+                                "            ",
+                                "            try:",
+                                "                #describe certificate",
+                                "                describe_response = acm_client.describe_certificate(",
+                                "                    CertificateArn=req_response['CertificateArn']",
+                                "                )",
+                                "                ",
+                                "                # extract cname and value from certificate describe",
+                                "                CNAME = describe_response['Certificate']['DomainValidationOptions'][0]['ResourceRecord']['Name']",
+                                "                Value = describe_response['Certificate']['DomainValidationOptions'][0]['ResourceRecord']['Value']",
+                                "                ",
+                                "            ",
+                                "            except Exception as e:",
+                                "                responseData = {",
+                                "                    \"FailReason\" : \"Certificate describe failed\"",
+                                "                }",
+                                "                STATUS = \"FAILED\"",
+                                "                ",
+                                "            try:",
+                                "                #add R53 CNAME record to validate ACM certificate",
+                                "                r53_response = r53_client.change_resource_record_sets(",
+                                "                    HostedZoneId=R53ZoneId,",
+                                "                    ChangeBatch= {",
+                                "                        'Changes': [",
+                                "                            {",
+                                "                                'Action': 'UPSERT',",
+                                "                                'ResourceRecordSet': ",
+                                "                                    {",
+                                "                                        'Name': CNAME,",
+                                "                                        'Type': 'CNAME',",
+                                "                                        'TTL': 300,",
+                                "                                        'ResourceRecords': [{'Value': Value}]",
+                                "                                    }",
+                                "                            }",
+                                "                        ]",
+                                "                    }",
+                                "                )",
+                                "                ",
+                                "                STATUS = \"SUCCESS\"",
+                                "                ",
+                                "                responseData = {",
+                                "                    \"certificateArn\" : req_response['CertificateArn'],",
+                                "                    \"certificateCname\" : CNAME,",
+                                "                    \"certificateCnameValue\" : Value,",
+                                "                    \"r53ZoneId\" : R53ZoneId",
+                                "                }",
+                                "                ",
+                                "                break",
+                                "                ",
+                                "            except Exception as e:",
+                                "                responseData = {",
+                                "                    \"FailReason\" : \"R53 record create failed\",",
+                                "                    \"cname\" : CNAME,",
+                                "                    \"cnameval\" : Value,",
+                                "                    \"r53zoneid\" : R53ZoneId",
+                                "                }",
+                                "                STATUS = \"FAILED\"",
+                                "                ",
+                                "        send(event, context, STATUS, responseData)",
+                                "        ",
+                                "    elif event['RequestType'] == \"Delete\":",
+                                "        ",
+                                "        #initialize vars outside try block",
+                                "        certArn = \"\"",
+                                "        cname = \"\"",
+                                "        value = \"\"",
+                                "        r53zoneid = \"\"",
+                                "        ",
+                                "        try:",
+                                "            #describe the stack",
+                                "            cfn_response = cfn_client.describe_stacks(",
+                                "                StackName=stackId",
+                                "            )",
+                                "",
+                                "            #get outputs from stack describe",
+                                "            outputs = cfn_response['Stacks'][0]['Outputs']",
+                                "",
+                                "            #set vars from outputs",
+                                "            for output in outputs:",
+                                "                if output['OutputKey'] == 'certificateArn':",
+                                "                    certArn = output['OutputValue']",
+                                "                elif output['OutputKey'] == 'certificateCname':",
+                                "                    cname = output['OutputValue']",
+                                "                elif output['OutputKey'] == 'certificateCnameValue':",
+                                "                    value = output['OutputValue']",
+                                "                elif output['OutputKey'] == 'r53ZoneId':",
+                                "                    r53zoneid = output['OutputValue']",
+                                "            ",
+                                "        except Exception as e:",
+                                "            responseData = {",
+                                "                \"FailReason\" : \"Stack describe failed\",",
+                                "                \"Stackid\" : stackId",
+                                "            }",
+                                "            send(event, context, FAILED, responseData)",
+                                "            ",
+                                "        try:",
+                                "            #delete certificate",
+                                "            delete_response = acm_client.delete_certificate(",
+                                "                CertificateArn=certArn",
+                                "            )",
+                                "        except Exception as e:",
+                                "            responseData = {",
+                                "                \"FailReason\" : \"Delete certificate failed\"",
+                                "            }",
+                                "            send(event, context, FAILED, responseData)",
+                                "            ",
+                                "        try:",
+                                "            #delete validation CNAME from R53",
+                                "            r53_response = r53_client.change_resource_record_sets(",
+                                "                HostedZoneId=r53zoneid,",
+                                "                ChangeBatch= {",
+                                "                    'Changes': [",
+                                "                        {",
+                                "                            'Action': 'DELETE',",
+                                "                            'ResourceRecordSet': ",
+                                "                                {",
+                                "                                    'Name': cname,",
+                                "                                    'Type': 'CNAME',",
+                                "                                    'TTL': 300,",
+                                "                                    'ResourceRecords': [{'Value': value}]",
+                                "                                }",
+                                "                        }",
+                                "                    ]",
+                                "                }",
+                                "            )",
+                                "        ",
+                                "            responseData = {",
+                                "                    \"SUCCESS\" : \"Successfully deleted certificate and R53 CNAME\"",
+                                "                }",
+                                "            send(event, context, SUCCESS, responseData)",
+                                "        ",
+                                "        except Exception as e:",
+                                "            responseData = {",
+                                "                \"FailReason\" : \"Delete R53 CNAME failed\",",
+                                "                \"certArn\" : certArn,",
+                                "                \"cname\" : cname,",
+                                "                \"value\" : value,",
+                                "                \"r53zoneid\" : r53zoneid",
+                                "            }",
+                                "            send(event, context, FAILED, responseData)",
+                                "        ",
+                                "    #ignore if not create or delete request",
+                                "    else:",
+                                "        responseData = {",
+                                "                \"SUCCESS\" : \"This was neither a create or delete request\"",
+                                "            }",
+                                "        send(event, context, SUCCESS, responseData)"
+                            ]
+                        ]
+                    }
+                },
+                "FunctionName" : "resumeCloudfrontACMLambda",
+                "Handler" : "index.lambda_handler",
+                "Role" : {
+                    "Fn::GetAtt": ["resumeCloudfrontACMLambdaRole","Arn"]
+                },
+                "Runtime" : "python3.9",
+                "Timeout" : 360
+              }
+        },
+        "resumeCloudfrontACMCustomResource" : {
+            "Type" : "AWS::CloudFormation::CustomResource",
+            "Properties" : {
+                "ServiceToken" : {
+                    "Fn::GetAtt": ["resumeCloudfrontACMLambda","Arn"]
+                },
+                "DomainName": { "Ref" : "DomainNameParameter" },
+                "R53ZoneId" : {
+                    "Ref" : "resumeHostedZoneRoute53"
+                }
+            }
+        },
+        "resumeBaseDomainNSLambdaPolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "ManagedPolicyName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeBaseDomainNSLambdaPolicy-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "PolicyDocument":{
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                              "sts:AssumeRole"
+                            ],
+                            "Resource": [
+                                {
+                                    "Ref": "BaseDomainRoleArn"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "resumeBaseDomainNSLambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeBaseDomainNSLambdaRole-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "resumeAllowLambdaLogsPolicy"
+                    },
+                    {
+                        "Ref": "resumeBaseDomainNSLambdaPolicy"
+                    }
+                ]
+            }
+        },
+        "resumeBaseDomainNSLambda" : {
+            "Type" : "AWS::Lambda::Function",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "Code" : {
+                    "ZipFile" : {
+                        "Fn::Join" : [
+                            "\n", [
+                                "from __future__ import print_function",
+                                "import urllib3",
+                                "import json",
+                                "import boto3",
+                                "import time",
+                                "",
+                                "#Updates NS on base domain R53 to point to new Route53 hosted zone",
+                                "",
+                                "#INPUTS: DomainName, R53ZoneId, R53NameServers, BaseDomainRoleArn",
+                                "",
+                                "## start cfnresponse module source code ##",
+                                "SUCCESS = \"SUCCESS\"",
+                                "FAILED = \"FAILED\"",
+                                "",
+                                "http = urllib3.PoolManager()",
+                                "",
+                                "",
+                                "def send(event, context, responseStatus, responseData, physicalResourceId=None, noEcho=False, reason=None):",
+                                "    responseUrl = event['ResponseURL']",
+                                "",
+                                "    print(responseUrl)",
+                                "",
+                                "    responseBody = {",
+                                "        'Status' : responseStatus,",
+                                "        'Reason' : reason or \"See the details in CloudWatch Log Stream: {}\".format(context.log_stream_name),",
+                                "        'PhysicalResourceId' : physicalResourceId or context.log_stream_name,",
+                                "        'StackId' : event['StackId'],",
+                                "        'RequestId' : event['RequestId'],",
+                                "        'LogicalResourceId' : event['LogicalResourceId'],",
+                                "        'NoEcho' : noEcho,",
+                                "        'Data' : responseData",
+                                "    }",
+                                "",
+                                "    json_responseBody = json.dumps(responseBody)",
+                                "",
+                                "    print(\"Response body:\")",
+                                "    print(json_responseBody)",
+                                "",
+                                "    headers = {",
+                                "        'content-type' : '',",
+                                "        'content-length' : str(len(json_responseBody))",
+                                "    }",
+                                "",
+                                "    try:",
+                                "        response = http.request('PUT', responseUrl, headers=headers, body=json_responseBody)",
+                                "        print(\"Status code:\", response.status)",
+                                "",
+                                "",
+                                "    except Exception as e:",
+                                "",
+                                "        print(\"send(..) failed executing http.request(..):\", e)",
+                                "## end cfnresponse module souce code ##",
+                                "",
+                                "",
+                                "",
+                                "def lambda_handler(event, context):",
+                                "",
+                                "    sts_client = boto3.client('sts')",
+                                "    ",
+                                "    epoch = time.time()",
+                                "    ",
+                                "    #Set vars from event properties",
+                                "    domain = event['ResourceProperties']['DomainName'].lower()",
+                                "    R53ZoneId = event['ResourceProperties']['BaseDomainR53ZoneId']",
+                                "    R53NameServers = event['ResourceProperties']['R53NameServers']",
+                                "    BaseDomainRoleArn = event['ResourceProperties']['BaseDomainRoleArn']",
+                                "",
+                                "    SessionName = \"ResumeBaseNSLambda-\" + str(epoch)",
+                                "",
+                                "    #Assumes role in base domain account to allow NS record updates",
+                                "    assumed_role_object=sts_client.assume_role(",
+                                "        RoleArn=BaseDomainRoleArn,",
+                                "        RoleSessionName=SessionName",
+                                "    )",
+                                "",
+                                "    credentials=assumed_role_object['Credentials']",
+                                "",
+                                "    r53_client = boto3.client(",
+                                "        'route53',",
+                                "        aws_access_key_id=credentials['AccessKeyId'],",
+                                "        aws_secret_access_key=credentials['SecretAccessKey'],",
+                                "        aws_session_token=credentials['SessionToken']",
+                                "    )",
+                                "        ",
+                                "    if event['RequestType'] == \"Create\":",
+                                "           ",
+                                "        try:",
+                                "            #Creates NS record for the R53 hosted zone on stack create",
+                                "            r53_response = r53_client.change_resource_record_sets(",
+                                "                HostedZoneId=R53ZoneId,",
+                                "                ChangeBatch= {",
+                                "                    'Changes': [",
+                                "                        {",
+                                "                            'Action': 'UPSERT',",
+                                "                            'ResourceRecordSet': ",
+                                "                                {",
+                                "                                    'Name': domain,",
+                                "                                    'Type': 'NS',",
+                                "                                    'TTL': 300,",
+                                "                                    'ResourceRecords': [",
+                                "                                        {'Value': R53NameServers[0]},",
+                                "                                        {'Value': R53NameServers[1]},",
+                                "                                        {'Value': R53NameServers[2]},",
+                                "                                        {'Value': R53NameServers[3]}",
+                                "                                    ]",
+                                "                                }",
+                                "                        }",
+                                "                    ]",
+                                "                }",
+                                "            )",
+                                "            ",
+                                "            STATUS = \"SUCCESS\"",
+                                "            ",
+                                "            responseData = {",
+                                "                \"Sucess\" : f\"Sucessfully created NS records on base hosted zone. ID: {R53ZoneId}\"",
+                                "            }",
+                                "            ",
+                                "        except Exception as e:",
+                                "            responseData = {",
+                                "                \"Fail Reason\": f\"Failed to create NS records on base hosted zone. ID: {R53ZoneId}\"",
+                                "            }",
+                                "            STATUS = \"FAILED\"",
+                                "            ",
+                                "        send(event, context, STATUS, responseData)",
+                                "        ",
+                                "    elif event['RequestType'] == \"Delete\":",
+                                "        ",
+                                "        try:",
+                                "            #Deletes NS record for the R53 hosted zone on stack delete",
+                                "            r53_response = r53_client.change_resource_record_sets(",
+                                "                HostedZoneId=R53ZoneId,",
+                                "                ChangeBatch= {",
+                                "                    'Changes': [",
+                                "                        {",
+                                "                            'Action': 'DELETE',",
+                                "                            'ResourceRecordSet': ",
+                                "                                {",
+                                "                                    'Name': domain,",
+                                "                                    'Type': 'NS',",
+                                "                                    'TTL': 300,",
+                                "                                    'ResourceRecords': [",
+                                "                                        {'Value': R53NameServers[0]},",
+                                "                                        {'Value': R53NameServers[1]},",
+                                "                                        {'Value': R53NameServers[2]},",
+                                "                                        {'Value': R53NameServers[3]}",
+                                "                                    ]",
+                                "                                }",
+                                "                        }",
+                                "                    ]",
+                                "                }",
+                                "            )",
+                                "        ",
+                                "            responseData = {",
+                                "                    \"SUCCESS\" : f\"Successfully deleted NS records on base hosted zone. ID: {R53ZoneId}\"",
+                                "                }",
+                                "            send(event, context, SUCCESS, responseData)",
+                                "        ",
+                                "        except Exception as e:",
+                                "            responseData = {",
+                                "                \"Fail Reason\": f\"Failed to delete NS records on base hosted zone. ID: {R53ZoneId}\"",
+                                "            }",
+                                "",
+                                "            send(event, context, FAILED, responseData)",
+                                "        ",
+                                "    else:",
+                                "        responseData = {",
+                                "                \"SUCCESS\" : \"This was neither a create or delete request\"",
+                                "            }",
+                                "        send(event, context, SUCCESS, responseData)"
+                            ]
+                        ]
+                    }
+                },
+                "FunctionName" : "resumeBaseDomainNSLambda",
+                "Handler" : "index.lambda_handler",
+                "Role" : {
+                    "Fn::GetAtt": ["resumeBaseDomainNSLambdaRole","Arn"]
+                },
+                "Runtime" : "python3.9",
+                "Timeout" : 60
+              }
+        },
+        "resumeBaseDomainNSCustomResource" : {
+            "Type" : "AWS::CloudFormation::CustomResource",
+            "Properties" : {
+                "ServiceToken" : {
+                    "Fn::GetAtt": ["resumeBaseDomainNSLambda","Arn"]
+                },
+                "DomainName": { "Ref" : "DomainNameParameter" },
+                "BaseDomainR53ZoneId": { "Ref" : "BaseDomainR53ZoneIdParameter" },
+                "BaseDomainRoleArn": { "Ref" : "BaseDomainRoleArn" },
+                "R53NameServers": {
+                    "Fn::GetAtt": ["resumeHostedZoneRoute53","NameServers"]
+                }
+            }
+        },
+        "resumeValidateCertLambdaPolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "ManagedPolicyName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeValidateCertLambdaPolicy-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "acm:DescribeCertificate",
+                            "Resource": {
+                                "Fn::GetAtt": ["resumeCloudfrontACMCustomResource","certificateArn"]
+                            } 
+                        }
+                    ]
+                }
+            }
+        },
+        "resumeValidateCertLambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeValidateCertLambdaRole-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "resumeValidateCertLambdaPolicy"
+                    },
+                    {
+                        "Ref": "resumeAllowLambdaLogsPolicy"
+                    }
+                ]
+            }
+        },
+        "resumeValidateCertLambda" : {
+            "Type" : "AWS::Lambda::Function",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "Code" : {
+                    "ZipFile" : {
+                        "Fn::Join" : [
+                            "\n", [
+                                "from __future__ import print_function",
+                                "import urllib3",
+                                "import time",
+                                "import json",
+                                "import boto3",
+                                "",
+                                "#Checks to make sure Cloudfront ACM certificate (created by resumeCloudfrontACMLambda.py) is validated",
+                                "#This occurs before Cloudfront distribution creation",
+                                "",
+                                "#INPUTS: certificateArn",
+                                "",
+                                "## start cfnresponse module source code ##",
+                                "SUCCESS = \"SUCCESS\"",
+                                "FAILED = \"FAILED\"",
+                                "",
+                                "http = urllib3.PoolManager()",
+                                "",
+                                "",
+                                "def send(event, context, responseStatus, responseData, physicalResourceId=None, noEcho=False, reason=None):",
+                                "    responseUrl = event['ResponseURL']",
+                                "",
+                                "    print(responseUrl)",
+                                "",
+                                "    responseBody = {",
+                                "        'Status' : responseStatus,",
+                                "        'Reason' : reason or \"See the details in CloudWatch Log Stream: {}\".format(context.log_stream_name),",
+                                "        'PhysicalResourceId' : physicalResourceId or context.log_stream_name,",
+                                "        'StackId' : event['StackId'],",
+                                "        'RequestId' : event['RequestId'],",
+                                "        'LogicalResourceId' : event['LogicalResourceId'],",
+                                "        'NoEcho' : noEcho,",
+                                "        'Data' : responseData",
+                                "    }",
+                                "",
+                                "    json_responseBody = json.dumps(responseBody)",
+                                "",
+                                "    print(\"Response body:\")",
+                                "    print(json_responseBody)",
+                                "",
+                                "    headers = {",
+                                "        'content-type' : '',",
+                                "        'content-length' : str(len(json_responseBody))",
+                                "    }",
+                                "",
+                                "    try:",
+                                "        response = http.request('PUT', responseUrl, headers=headers, body=json_responseBody)",
+                                "        print(\"Status code:\", response.status)",
+                                "",
+                                "",
+                                "    except Exception as e:",
+                                "",
+                                "        print(\"send(..) failed executing http.request(..):\", e)",
+                                "## end cfnresponse module souce code ##",
+                                "",
+                                "acm_client = boto3.client('acm', region_name='us-east-1')",
+                                "",
+                                "def lambda_handler(event, context):",
+                                "    ",
+                                "    #Set timeout slightly shorter than lambda function timeout",
+                                "    expire_epoch = int(time.time()) + 880",
+                                "    ",
+                                "    #Set vars from event context",
+                                "    certificateArn = event['ResourceProperties']['certificateArn']",
+                                "        ",
+                                "    if event['RequestType'] == \"Create\":",
+                                "        ",
+                                "        while int(time.time()) < expire_epoch:",
+                                "            ",
+                                "            #initialize vars outside try block",
+                                "            validationStatus = \"\"",
+                                "            STATUS = None",
+                                "            ",
+                                "            try:",
+                                "                #describe the certificate by ARN",
+                                "                describe_response = acm_client.describe_certificate(",
+                                "                    CertificateArn=certificateArn",
+                                "                )",
+                                "                ",
+                                "                #get the validation status of the certificate",
+                                "                validationStatus = describe_response['Certificate']['DomainValidationOptions'][0]['ValidationStatus']",
+                                "            ",
+                                "            except Exception as e:",
+                                "                responseData = {",
+                                "                    \"FailReason\" : \"Certificate describe failed\"",
+                                "                }",
+                                "                STATUS = \"FAILED\"",
+                                "                ",
+                                "            #break out of loop on successful validation",
+                                "            if validationStatus == \"SUCCESS\":",
+                                "                responseData = {",
+                                "                    \"SUCCESS\" : \"Certificate was successfully validated\"",
+                                "                }",
+                                "                STATUS = \"SUCCESS\"",
+                                "                break",
+                                "            ",
+                                "            #break out of loop if validation fails",
+                                "            elif validationStatus == \"FAILED\":",
+                                "                responseData = {",
+                                "                    \"FailReason\" : \"Certificate was unable to validate\"",
+                                "                }",
+                                "                STATUS = \"FAILED\"",
+                                "                break",
+                                "        ",
+                                "        #return failure if lambda function times out",
+                                "        if STATUS == None:",
+                                "            responseData = {",
+                                "                    \"FailReason\" : \"Certificate still pending validation. Lambda function timed out.\"",
+                                "                }",
+                                "            STATUS = \"FAILED\"",
+                                "        ",
+                                "        send(event, context, STATUS, responseData)",
+                                "        ",
+                                "    #ignore if not a creation request",
+                                "    else:",
+                                "        responseData = {",
+                                "                \"SUCCESS\" : \"This was not a create request. Validation not required.\"",
+                                "            }",
+                                "        send(event, context, SUCCESS, responseData)"
+                            ]
+                        ]
+                    }
+                },
+                "FunctionName" : "resumeValidateCertLambda",
+                "Handler" : "index.lambda_handler",
+                "Role" : {
+                    "Fn::GetAtt": ["resumeValidateCertLambdaRole","Arn"]
+                },
+                "Runtime" : "python3.9",
+                "Timeout" : 900
+              }
+        },
+        "resumeValidateCertCustomResource" : {
+            "Type" : "AWS::CloudFormation::CustomResource",
+            "Properties" : {
+                "ServiceToken" : {
+                    "Fn::GetAtt": ["resumeValidateCertLambda","Arn"]
+                },
+                "certificateArn": {
+                    "Fn::GetAtt": ["resumeCloudfrontACMCustomResource","certificateArn"]
+                }
+            }
+        },
+        "resumeFrontEndS3Bucket": {
+            "Type": "AWS::S3::Bucket",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "BucketName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            { "Ref" : "DomainNameParameter" },
+                            "-frontend-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "OwnershipControls": {
+                    "Rules": [
+                        {
+                            "ObjectOwnership": "BucketOwnerEnforced"
+                        }
+                    ]
+                },
+                "PublicAccessBlockConfiguration" : {
+                    "BlockPublicAcls" : true,
+                    "BlockPublicPolicy" : true,
+                    "IgnorePublicAcls" : true,
+                    "RestrictPublicBuckets" : true
+                },
+                "WebsiteConfiguration": {
+                    "IndexDocument": "index.html",
+                    "ErrorDocument": "error.html"
+                }
+            }
+        },
+        "resumeCloudFrontOAI" : {
+            "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "CloudFrontOriginAccessIdentityConfig": {
+                    "Comment": "CF OAI for Resume S3 Access"
+                }
+            }
+        },
+        "resumeFrontEndBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "PolicyDocument": {
+                    "Id": "resumeFrontEndBucketPolicy",
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "CloudFrontRead",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS" : {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ",
+                                            {
+                                                "Ref": "resumeCloudFrontOAI"
+                                            }
+                                        ]
+                                    ]
+                                }
+                            },
+                            "Action": "s3:GetObject",
+                            "Resource": {
+                                "Fn::Join": [
+                                    "",
+                                    [
+                                        "arn:aws:s3:::",
+                                        {
+                                            "Ref": "resumeFrontEndS3Bucket"
+                                        },
+                                        "/*"
+                                    ]
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "Bucket": {
+                    "Ref": "resumeFrontEndS3Bucket"
+                }
+            }
+        },
+        "resumeCloudFrontOriginRequestPolicy" : {
+            "Type" : "AWS::CloudFront::OriginRequestPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "OriginRequestPolicyConfig" : {
+                    "CookiesConfig" : {
+                        "CookieBehavior" : "none"
+                    },
+                    "HeadersConfig" : {
+                        "HeaderBehavior" : "whitelist",
+                        "Headers" : [ "CloudFront-Viewer-Address" ]
+                    },
+                    "Name" : "CF-Origin-Request-S3",
+                    "QueryStringsConfig" : {
+                        "QueryStringBehavior" : "none"
+                    }
+                  }
+              }
+          },
+        "resumeCloudFrontDistribution" : {
+            "Type" : "AWS::CloudFront::Distribution",
+            "DeletionPolicy" : "Delete",
+            "DependsOn" : "resumeValidateCertCustomResource",
+            "Properties" : {
+                "DistributionConfig" : {
+                    "Aliases" : [{ "Ref" : "DomainNameParameter" }],
+                    "CustomErrorResponses" : [ {
+                        "ErrorCachingMinTTL" : 10,
+                        "ErrorCode" : 403,
+                        "ResponseCode" : 403,
+                        "ResponsePagePath" : "/error.html"
+                      } ],
+                    "DefaultCacheBehavior" : {
+                        "AllowedMethods" : [ "GET", "HEAD", "OPTIONS" ],
+                        "CachePolicyId" : "658327ea-f89d-4fab-a63d-7e88639e58f6",
+                        "Compress" : true,
+                        "OriginRequestPolicyId" : {
+                            "Ref": "resumeCloudFrontOriginRequestPolicy"
+                        },
+                        "TargetOriginId" : {
+                            "Ref": "resumeFrontEndS3Bucket"
+                        },
+                        "ViewerProtocolPolicy" : "redirect-to-https"
+                      },
+                    "DefaultRootObject" : "index.html",
+                    "Enabled" : true,
+                    "HttpVersion" : "http2",
+                    "IPV6Enabled" : true,
+                    "Origins" : [{
+                        "DomainName" : {
+                            "Fn::GetAtt": ["resumeFrontEndS3Bucket","RegionalDomainName"]
+                        },
+                        "Id" : {
+                            "Ref": "resumeFrontEndS3Bucket"
+                        },
+                        "S3OriginConfig" : {
+                            "OriginAccessIdentity" : {
+                                "Fn::Join": [
+                                    "",
+                                    [
+                                        "origin-access-identity/cloudfront/",
+                                        {
+                                            "Ref": "resumeCloudFrontOAI"
+                                        }
+                                    ]
+                                ]
+                            }
+                        }
+                    }],
+                    "PriceClass" : "PriceClass_100",
+                    "ViewerCertificate" : {
+                        "AcmCertificateArn" : {
+                            "Fn::GetAtt": ["resumeCloudfrontACMCustomResource","certificateArn"]
+                        },
+                        "MinimumProtocolVersion" : "TLSv1.2_2021",
+                        "SslSupportMethod" : "sni-only"
+                    }
+                }
+            }
+        },
+        "resumeCloudFrontDistributionR53ARecord": {
+            "Type" : "AWS::Route53::RecordSet",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "AliasTarget" : {
+                    "DNSName" : {
+                        "Fn::GetAtt": ["resumeCloudFrontDistribution","DomainName"]
+                    },
+                    "EvaluateTargetHealth" : false,
+                    "HostedZoneId" : "Z2FDTNDATAQYW2"
+                },
+                "HostedZoneId" : {
+                    "Ref" : "resumeHostedZoneRoute53"
+                },
+                "Name" : {
+                    "Ref" : "DomainNameParameter"
+                },
+                "Type" : "A"
+            }
+        },
+        "resumeCloudFrontDistributionR53AAAARecord": {
+            "Type" : "AWS::Route53::RecordSet",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "AliasTarget" : {
+                    "DNSName" : {
+                        "Fn::GetAtt": ["resumeCloudFrontDistribution","DomainName"]
+                    },
+                    "EvaluateTargetHealth" : false,
+                    "HostedZoneId" : "Z2FDTNDATAQYW2"
+                },
+                "HostedZoneId" : {
+                    "Ref" : "resumeHostedZoneRoute53"
+                },
+                "Name" : {
+                    "Ref" : "DomainNameParameter"
+                },
+                "Type" : "AAAA"
+            }
+        },
+        "resumeGitHubOIDC" : {
+            "Type" : "AWS::IAM::OIDCProvider",
+            "DeletionPolicy" : "Delete",
+            "Properties" : {
+                "ClientIdList" : [ "sts.amazonaws.com" ],
+                "ThumbprintList" : [ "6938fd4d98bab03faadb97b34396831e3780aea1" ],
+                "Url" : "https://token.actions.githubusercontent.com"
+            }
+        },
+        "resumeFrontEndGitHubOIDCPolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "ManagedPolicyName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeFrontEndGitHubOIDCPolicy-",
+                            {
+                                "Ref": "AWS::Region"
+                            }
+                        ]
+                    ]
+                },
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "cloudfront:UpdateDistribution",
+                                "cloudfront:CreateInvalidation"
+                            ],
+                            "Resource": {
+                                "Fn::Join": [
+                                    "", [
+                                        "arn:",
+                                        {
+                                            "Ref": "AWS::Partition"
+                                        },
+                                        ":cloudfront::",
+                                        {
+                                            "Ref": "AWS::AccountId"
+                                        },
+                                        ":distribution/",
+                                        {
+                                            "Ref": "resumeCloudFrontDistribution"
+                                        }
+                                    ]
+                                ]
+                            }   
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:PutObject",
+                                "s3:GetObject",
+                                "s3:ListBucket",
+                                "s3:DeleteObject",
+                                "s3:GetBucketLocation"
+                            ],
+                            "Resource": [
+                                {
+                                    "Fn::GetAtt": ["resumeFrontEndS3Bucket", "Arn"]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        "", [
+                                            {
+                                                "Fn::GetAtt": ["resumeFrontEndS3Bucket", "Arn"]
+                                            },
+                                            "/*"
+                                        ]
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "resumeFrontEndGitHubOIDCRole": {
+            "Type": "AWS::IAM::Role",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeFrontEndGitHubOIDCRole-",
+                            {
+                                "Ref": "AWS::Region"
+                            }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Federated": {
+                                    "Ref": "resumeGitHubOIDC"
+                                }
+                            },
+                            "Action": "sts:AssumeRoleWithWebIdentity",
+                            "Condition": {
+                                "ForAllValues:StringEquals": {
+                                    "token.actions.githubusercontent.com:sub": {
+                                        "Fn::Join": [
+                                            "", [
+                                                "repo:",
+                                                {
+                                                    "Ref": "GitHubOrg"
+                                                },
+                                                "/",
+                                                {
+                                                    "Ref": "GitHubFrontEndRepo"
+                                                },
+                                                ":ref:refs/heads/main"
+                                            ]
+                                        ]
+                                    },
+                                    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "resumeFrontEndGitHubOIDCPolicy"
+                    }
+                ]
+            }
+        },
+        "resumeBackEndGitHubOIDCPolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "ManagedPolicyName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeBackEndGitHubOIDCPolicy-",
+                            {
+                                "Ref": "AWS::Region"
+                            }
+                        ]
+                    ]
+                },
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "iam:*",
+                                "cloudfront:*",
+                                "s3:*",
+                                "apigateway:*",
+                                "ssm:*",
+                                "logs:*",
+                                "route53:*",
+                                "lambda:*",
+                                "cloudformation:*",
+                                "dynamodb:*",
+                                "acm:*"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "resumeBackEndGitHubOIDCRole": {
+            "Type": "AWS::IAM::Role",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "resumeBackEndGitHubOIDCRole-",
+                            {
+                                "Ref": "AWS::Region"
+                            }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Federated": {
+                                    "Ref": "resumeGitHubOIDC"
+                                }
+                            },
+                            "Action": "sts:AssumeRoleWithWebIdentity",
+                            "Condition": {
+                                "ForAllValues:StringEquals": {
+                                    "token.actions.githubusercontent.com:sub": {
+                                        "Fn::Join": [
+                                            "", [
+                                                "repo:",
+                                                {
+                                                    "Ref": "GitHubOrg"
+                                                },
+                                                "/",
+                                                {
+                                                    "Ref": "GitHubBackEndRepo"
+                                                },
+                                                ":ref:refs/heads/main"
+                                            ]
+                                        ]
+                                    },
+                                    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "resumeBackEndGitHubOIDCPolicy"
+                    }
+                ]
+            }
+        },
+        "resumeBackEndS3Bucket": {
+            "Type": "AWS::S3::Bucket",
+            "DeletionPolicy" : "Delete",
+            "Properties": {
+                "BucketName" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            { "Ref" : "DomainNameParameter" },
+                            "-backend-",
+                            { "Ref" : "AWS::Region" }
+                        ]
+                    ]
+                },
+                "OwnershipControls": {
+                    "Rules": [
+                        {
+                            "ObjectOwnership": "BucketOwnerEnforced"
+                        }
+                    ]
+                },
+                "PublicAccessBlockConfiguration" : {
+                    "BlockPublicAcls" : true,
+                    "BlockPublicPolicy" : true,
+                    "IgnorePublicAcls" : true,
+                    "RestrictPublicBuckets" : true
+                }
+            }
+        }
+    },
+    "Parameters" : {
+        "DomainNameParameter" : {
+          "Type" : "String"
+        },
+        "BaseDomainR53ZoneIdParameter" : {
+            "Type" : "String",
+            "NoEcho": true
+        },
+        "BaseDomainRoleArn" : {
+            "Type" : "String",
+            "NoEcho": true
+        },
+        "resumeContactEmailParameter" : {
+            "Type" : "String"
+        },
+        "resumeContactPhoneParameter" : {
+            "Type" : "String"
+        },
+        "GitHubOrg" : {
+            "Type" : "String"
+        },
+        "GitHubFrontEndRepo" : {
+            "Type" : "String"
+        },
+        "GitHubBackEndRepo" : {
+            "Type" : "String"
+        }
+    },
+    "Outputs": {
+        "certificateArn": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "resumeCloudfrontACMCustomResource",
+                    "certificateArn"
+                ]
+            }
+        },
+        "certificateCname": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "resumeCloudfrontACMCustomResource",
+                    "certificateCname"
+                ]
+            }
+        },
+        "certificateCnameValue": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "resumeCloudfrontACMCustomResource",
+                    "certificateCnameValue"
+                ]
+            }
+        },
+        "r53ZoneId": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "resumeCloudfrontACMCustomResource",
+                    "r53ZoneId"
+                ]
+            }
+        },
+        "FontEndGitHubOIDCRoleArn": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "resumeFrontEndGitHubOIDCRole",
+                    "Arn"
+                ]
+            }
+        },
+        "BackEndGitHubOIDCRoleArn": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "resumeBackEndGitHubOIDCRole",
+                    "Arn"
+                ]
+            }
+        },
+        "CloudFrontDistributionId": {
+            "Value": {
+                "Ref": "resumeCloudFrontDistribution"
+            }
+        },
+        "BackEndS3Bucket" : {
+            "Value": {
+                "Ref": "resumeBackEndS3Bucket"
+            }
+        },
+        "FrontEndS3Bucket" : {
+            "Value": {
+                "Ref": "resumeFrontEndS3Bucket"
+            }
+        }
+    }
+}

@@ -1,0 +1,105 @@
+name: Push Cloudformation Stack
+
+on:
+  push:
+    paths: 
+     - 'cloudformation/cf_resume.json'
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Check Stack Exists
+      run: |
+        if aws cloudformation describe-stacks --stack-name "${{ secrets.STACK_NAME }}" > /dev/null 2>&1; then
+          echo "STACK_EXISTS=true" >> "$GITHUB_ENV"
+        else
+          echo "STACK_EXISTS=false" >> "$GITHUB_ENV"
+        fi
+
+    - name: Deploy to S3 Bucket
+      if: env.STACK_EXISTS == 'true'
+      run: |
+          aws s3 cp ./cloudformation/cf_resume.json \
+          s3://${{ secrets.S3_BUCKET }}/cloudformation/cf_resume.json 2> /dev/null
+
+    - name: Update Stack
+      if: env.STACK_EXISTS == 'true'
+      run: |
+        if aws cloudformation update-stack --stack-name "${{ secrets.STACK_NAME }}" \
+        --template-url "https://s3.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.S3_BUCKET }}/cloudformation/cf_resume.json" \
+        --parameters \
+        ParameterKey="BaseDomainR53ZoneIdParameter",ParameterValue="${{ secrets.BASEDOMAINR53ZONEIDPARAMETER }}" \
+        ParameterKey="BaseDomainRoleArn",ParameterValue="${{ secrets.BASEDOMAINROLEARN }}" \
+        ParameterKey="DomainNameParameter",ParameterValue="${{ secrets.DOMAINNAMEPARAMETER }}" \
+        ParameterKey="GitHubBackEndRepo",ParameterValue="${{ secrets.GITHUBBACKENDREPO }}" \
+        ParameterKey="GitHubFrontEndRepo",ParameterValue="${{ secrets.GITHUBFRONTENDREPO }}" \
+        ParameterKey="GitHubOrg",ParameterValue="${{ secrets.GITHUBORG }}" \
+        ParameterKey="resumeContactEmailParameter",ParameterValue="${{ secrets.RESUMECONTACTEMAILPARAMETER }}" \
+        ParameterKey="resumeContactPhoneParameter",ParameterValue="${{ secrets.RESUMECONTACTPHONEPARAMETER }}" \
+        --capabilities "CAPABILITY_NAMED_IAM" > /dev/null 2>&1; then
+          echo "STACK_UPDATE=true" >> "$GITHUB_ENV"
+        else
+          echo "STACK_UPDATE=false" >> "$GITHUB_ENV"
+        fi
+
+    - name: Check Stack Update Status
+      if: env.STACK_UPDATE == 'true'
+      run: |
+        stackstatus="na"
+        timeout 15m bash -c -- 'while [[ $stackstatus != "\"UPDATE_COMPLETE"\" ]]; do \
+        stackstatus=$( aws cloudformation describe-stacks --stack-name "${{ secrets.STACK_NAME }}" \
+        | jq ".Stacks[0].StackStatus" 2> /dev/null )  && echo $stackstatus; done'
+        
+    - name: Trigger Frontend Push to S3
+      if: env.STACK_EXISTS == 'true'
+      run: |
+        CloudFrontDistributionId='na'
+        FontEndGitHubOIDCRoleArn='na'
+        FrontEndS3Bucket='na'
+        outputs=$( aws cloudformation describe-stacks --stack-name "${{ secrets.STACK_NAME }}" \
+        | jq -c ".Stacks[0].Outputs[]" )
+        for output in $outputs; do
+          key=$( echo $output | jq ".OutputKey" | tr -d '"' )
+          if [[ $key == "CloudFrontDistributionId" ]]; then
+            CloudFrontDistributionId=$( echo $output | jq ".OutputValue" | tr -d '"' )
+            echo "::add-mask::$CloudFrontDistributionId"
+            echo "CloudFrontDistributionId=$CloudFrontDistributionId" >> "$GITHUB_ENV"
+          elif [[ $key == "FontEndGitHubOIDCRoleArn" ]]; then
+            FontEndGitHubOIDCRoleArn=$( echo $output | jq ".OutputValue" | tr -d '"' )
+            echo "::add-mask::$FontEndGitHubOIDCRoleArn"
+            echo "FontEndGitHubOIDCRoleArn=$FontEndGitHubOIDCRoleArn" >> "$GITHUB_ENV"
+          elif [[ $key == "FrontEndS3Bucket" ]]; then
+            FrontEndS3Bucket=$( echo $output | jq ".OutputValue" | tr -d '"' )
+            echo "::add-mask::$FrontEndS3Bucket"
+            echo "FrontEndS3Bucket=$FrontEndS3Bucket" >> "$GITHUB_ENV"
+          fi
+        done
+        curl_d="{\"ref\":\"main\",\"inputs\":{\"aws_region\":\"${{ secrets.AWS_REGION }}\",\
+        \"aws_arn\":\"$FontEndGitHubOIDCRoleArn\",\
+        \"aws_bucket\":\"$FrontEndS3Bucket\",\
+        \"aws_distribution\":\"$CloudFrontDistributionId\"}}"
+        curl \
+        -X POST \
+        -u "${{ secrets.REPO_USER }}:${{ secrets.REPO_PAT }}" \
+        -H "Accept: application/vnd.github.v3+json" \
+        -H "Content-Type: application/json" \
+        "https://api.github.com/repos/${{ secrets.GITHUBORG }}/${{ secrets.GITHUBFRONTENDREPO }}\
+        /actions/workflows/${{ secrets.FRONTEND_WORKFLOW_ID }}/dispatches" \
+        -d "$curl_d"
