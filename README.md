@@ -9,3 +9,9 @@ lambdaFunctions/ - contains all of the lambda functions that are included in the
 lambdaLayers/ - contains a lambda layer for pillow, the PIL fork for python 3, this is required to draw the challenges in resumeGenerateChallengeLambda.py as it is not built in to lambda
 
 .github/workflows/ - contains the GitHub Actions workflow files to update the stack and the pillow.zip file
+
+[Front-end repository](https://github.com/mattisz/resume-frontend)
+
+[See my resume](https://resume.mattisz.com)
+
+[See the full write up](https://resume.mattisz.com/about.html)
